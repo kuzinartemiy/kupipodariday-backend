@@ -1,45 +1,52 @@
-import { User } from 'src/users/user.entity';
-// import { IsArray } from 'class-validator';
+import { Length, IsString, IsUrl } from 'class-validator';
+import { OfferEntity } from 'src/offers/offer.entity';
+import { UserEntity } from 'src/users/users.entity';
 import {
   Column,
   Entity,
   JoinColumn,
-  OneToOne,
+  ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
-@Entity()
-export class Wish {
+@Entity('wishes')
+export class WishEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ length: 250 })
+  @IsString()
+  @Length(1, 250)
   name: string;
 
   @Column()
+  @IsUrl()
   link: string;
 
   @Column()
-  image: URL;
+  @IsUrl()
+  image: string;
 
-  @Column()
+  @Column({ type: 'decimal', precision: 5, scale: 2 })
   price: number;
 
-  @Column()
+  @Column({ type: 'decimal', precision: 5, scale: 2 })
   raised: number;
 
-  @OneToOne(() => User)
+  @ManyToOne(() => UserEntity, (user) => user.wishes)
   @JoinColumn()
-  owner: User;
+  owner: UserEntity;
 
-  @Column()
+  @Column({ length: 1024 })
+  @IsString()
+  @Length(1, 1024)
   description: string;
 
-  // @Column()
-  // @IsArray({ each: true })
-  // offers: Offer[];
+  @OneToMany(() => OfferEntity, (offer) => offer.item)
+  offers: OfferEntity[];
 
-  @Column()
+  @Column('int')
   copied: number;
 
   @Column()

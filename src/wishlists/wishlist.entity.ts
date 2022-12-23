@@ -1,28 +1,34 @@
-import { Wish } from 'src/wishes/wish.entity';
-import { IsArray } from 'class-validator';
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { IsDate, IsString, IsUrl, Length } from 'class-validator';
+import { WishEntity } from 'src/wishes/wish.entity';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
-@Entity()
-export class Wishlist {
+@Entity('wishlists')
+export class WishlistEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column()
+  @Column({ length: 250 })
+  @IsString()
+  @Length(1, 250)
   name: string;
 
-  @Column()
+  @Column({ length: 1500 })
+  @IsString()
+  @Length(1, 1500)
   description: string;
 
   @Column()
-  image: URL;
+  @IsUrl()
+  image: string;
+
+  @OneToMany(() => WishEntity, (wish) => wish.id)
+  items: WishEntity[];
 
   @Column()
-  @IsArray({ each: true })
-  items: Wish[];
-
-  @Column()
+  @IsDate()
   createdAt: Date;
 
   @Column()
+  @IsDate()
   updatedAt: Date;
 }
