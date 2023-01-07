@@ -1,9 +1,9 @@
 import { ConfigService } from '@nestjs/config';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
-import { OfferEntity } from 'src/offers/offer.entity';
-import { UserEntity } from 'src/users/users.entity';
-import { WishEntity } from 'src/wishes/wish.entity';
-import { WishlistEntity } from 'src/wishlists/wishlist.entity';
+import { OfferEntity } from 'src/offers/entities/offer.entity';
+import { UserEntity } from 'src/users/entities/user.entity';
+import { WishEntity } from 'src/wishes/entities/wish.entity';
+import { WishlistEntity } from 'src/wishlists/entities/wishlist.entity';
 
 export const getPostgresConfig = async (
   configService: ConfigService,
