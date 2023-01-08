@@ -5,61 +5,60 @@ import {
   NotFoundException,
   Param,
   Patch,
+  Post,
   Req,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
 import { WishEntity } from 'src/wishes/entities/wish.entity';
 import { WishlistEntity } from 'src/wishlists/entities/wishlist.entity';
-import { UpdateResult } from 'typeorm';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UserProfileResponseDto } from './dto/user-profile.dto';
+import { UserPublicProfileResponseDto } from './dto/user-public-profile.dto';
 import { UserEntity } from './entities/user.entity';
 import { USER_NOT_FOUND_ERROR } from './users.constants';
 import { UsersService } from './users.service';
 
+@UseGuards(JwtAuthGuard)
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @UseGuards(JwtAuthGuard)
   @Get()
   async findAll(): Promise<UserEntity[]> {
     const fondedUsers = (await this.usersService.findAll()).map((user) => {
       delete user.password;
       return user;
     });
+
     return fondedUsers;
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get('me')
   async getLoggedInUser(
     @Req() { user }: { user: UserEntity },
-  ): Promise<UserEntity> {
+  ): Promise<UserProfileResponseDto> {
     const foundedUser = await this.usersService.findUserById(user.id);
     if (!foundedUser) throw new NotFoundException(USER_NOT_FOUND_ERROR);
-    delete foundedUser.password;
-    return foundedUser;
+
+    return UserProfileResponseDto.getProfile(foundedUser);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Patch('me')
   async updateLoggedInUser(
     @Req() { user }: { user: UserEntity },
     @Body() dto: UpdateUserDto,
-  ): Promise<UpdateResult> {
-    return await this.usersService.updateById(user.id, dto);
+  ): Promise<UserProfileResponseDto> {
+    const updatedUser = await this.usersService.updateById(user.id, dto);
+
+    return UserProfileResponseDto.getProfile(updatedUser);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get('me/wishes')
-  async getLoggedInUserWishes(
-    @Req() { user }: { user: UserEntity },
-  ): Promise<WishEntity[]> {
+  async getLoggedInUserWishes(@Req() { user }: { user: UserEntity }) {
     return await this.usersService.getUserWishes(user.id);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get('me/wishlists')
   async getLoggedInUserWishlists(
     @Req() { user }: { user: UserEntity },
@@ -70,20 +69,30 @@ export class UsersController {
   @Get(':username')
   async getUserByUsername(
     @Param('username') username: string,
-  ): Promise<UserEntity> {
+  ): Promise<UserPublicProfileResponseDto> {
     const user = await this.usersService.findUserByUsername(username);
     if (!user) throw new NotFoundException(USER_NOT_FOUND_ERROR);
-    delete user.password;
-    return user;
+
+    return UserPublicProfileResponseDto.getPublicProfile(user);
   }
 
-  @Get('find/:searchQuery')
+  @Post('find')
   async findUser(
-    @Param('searchQuery') searchQuery: string,
-  ): Promise<UserEntity> {
-    const user = await this.usersService.findUser(searchQuery);
+    @Body('query') query: string,
+  ): Promise<UserProfileResponseDto> {
+    const user = await this.usersService.findUser(query);
     if (!user) throw new NotFoundException(USER_NOT_FOUND_ERROR);
-    delete user.password;
-    return user;
+
+    return UserProfileResponseDto.getProfile(user);
+  }
+
+  @Get(':username/wishes')
+  async GetUserWishes(
+    @Param('username') username: string,
+  ): Promise<WishEntity[]> {
+    const user = await this.usersService.findUserByUsername(username);
+    if (!user) throw new NotFoundException(USER_NOT_FOUND_ERROR);
+
+    return await this.usersService.getUserWishes(user.id);
   }
 }

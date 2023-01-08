@@ -16,6 +16,6 @@ export const getPostgresConfig = async (
     password: configService.get('POSTGRES_PASSWORD'),
     database: configService.get('POSTGRES_DB'),
     entities: [UserEntity, OfferEntity, WishEntity, WishlistEntity],
-    synchronize: true,
+    synchronize: configService.get('SYNCHRONIZE'),
   };
 };

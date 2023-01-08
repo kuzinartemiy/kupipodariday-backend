@@ -4,9 +4,8 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { UserEntity } from 'src/users/entities/user.entity';
 import { UsersService } from 'src/users/users.service';
-import { DeleteResult, In, Repository, UpdateResult } from 'typeorm';
+import { In, Repository, UpdateResult } from 'typeorm';
 import { CreateWishDto } from './dto/create-wish.dto';
 import { UpdateWishDto } from './dto/update-wish.dto';
 import { WishEntity } from './entities/wish.entity';
@@ -25,13 +24,18 @@ export class WishesService {
     private readonly usersService: UsersService,
   ) {}
 
-  async createWish(dto: CreateWishDto, owner: UserEntity): Promise<WishEntity> {
-    delete owner.password;
+  async createWish(dto: CreateWishDto, ownerId: number): Promise<WishEntity> {
+    const user = await this.usersService.findUserById(ownerId);
     const newWish = this.wishesRepository.create({
       ...dto,
-      owner,
+      owner: user,
     });
-    return this.wishesRepository.save(newWish);
+    const savedWish = await this.wishesRepository.save(newWish);
+
+    delete savedWish.owner.password;
+    delete savedWish.owner.email;
+
+    return savedWish;
   }
 
   async findAll(): Promise<WishEntity[]> {
@@ -39,26 +43,47 @@ export class WishesService {
   }
 
   async findLastWishes(): Promise<WishEntity[]> {
-    return this.wishesRepository.find({
+    const lastWishes = await this.wishesRepository.find({
       take: 40,
       order: { createdAt: 'desc' },
+      relations: ['owner'],
     });
+
+    for (const wish of lastWishes) {
+      delete wish.owner.password;
+      delete wish.owner.email;
+    }
+
+    return lastWishes;
   }
 
   async findTopWishes(): Promise<WishEntity[]> {
-    return this.wishesRepository.find({
+    const topWishes = await this.wishesRepository.find({
       take: 10,
       order: { copied: 'desc' },
+      relations: ['owner'],
     });
+
+    for (const wish of topWishes) {
+      delete wish.owner.password;
+      delete wish.owner.email;
+    }
+
+    return topWishes;
   }
 
   async findWishById(id: number): Promise<WishEntity> {
-    return this.wishesRepository.findOne({
+    const wish = await this.wishesRepository.findOne({
       where: { id },
-      relations: {
-        owner: { wishes: true },
-      },
+      relations: ['owner', 'offers'],
     });
+
+    if (!wish) throw new NotFoundException(WISH_NOT_FOUND_ERROR);
+
+    delete wish.owner.password;
+    delete wish.owner.email;
+
+    return wish;
   }
 
   async updateWish(
@@ -77,7 +102,7 @@ export class WishesService {
     return this.wishesRepository.update(wishId, dto);
   }
 
-  async deleteWishById(wishId: number, userId: number): Promise<DeleteResult> {
+  async deleteWishById(wishId: number, userId: number): Promise<WishEntity> {
     const wish = await this.findWishById(wishId);
     if (!wish) throw new BadRequestException(WISH_NOT_FOUND_ERROR);
     if (wish.raised) throw new BadRequestException(WISH_RAISED_NOT_NULL_ERROR);
@@ -86,7 +111,12 @@ export class WishesService {
       throw new BadRequestException(USER_NOT_WISH_OWNER_ERROR);
     }
 
-    return this.wishesRepository.delete(wishId);
+    await this.wishesRepository.delete(wishId);
+
+    delete wish.owner.password;
+    delete wish.owner.email;
+
+    return wish;
   }
 
   async copyWish(wishId: number, userId: number): Promise<WishEntity> {
@@ -98,7 +128,6 @@ export class WishesService {
 
     const user = await this.usersService.findUserById(userId);
     if (!user) throw new NotFoundException(USER_NOT_FOUND_ERROR);
-    delete user.password;
 
     await this.wishesRepository.update(wishId, {
       copied: (wish.copied += 1),
@@ -108,11 +137,11 @@ export class WishesService {
       ...wish,
       owner: user,
       copied: 0,
-      raised: null,
+      raised: 0,
       offers: [],
     };
 
-    return await this.createWish(wishCopy, user);
+    return await this.createWish(wishCopy, user.id);
   }
 
   async updateWishRaised(id: number, raised: number): Promise<UpdateResult> {

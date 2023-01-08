@@ -8,13 +8,13 @@ import {
   HttpCode,
 } from '@nestjs/common';
 import { CreateUserDto } from 'src/users/dto/create-user.dto';
-import { UserEntity } from 'src/users/entities/user.entity';
+import { SignupUserResponseDto } from 'src/users/dto/signup-user.dto';
 import { UsersService } from 'src/users/users.service';
 import { USER_EXIST_ERROR } from './auth.constants';
 import { AuthService } from './auth.service';
 import { LocalGuard } from './guards/local.guard';
 
-@Controller('auth')
+@Controller()
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
@@ -22,9 +22,16 @@ export class AuthController {
   ) {}
 
   @Post('signup')
-  async signup(@Body() dto: CreateUserDto): Promise<UserEntity> {
-    const oldUser = await this.usersService.findUserByEmail(dto.email);
-    if (oldUser) throw new BadRequestException(USER_EXIST_ERROR);
+  async signup(@Body() dto: CreateUserDto): Promise<SignupUserResponseDto> {
+    const foundedUserByEmail = await this.usersService.findUserByEmail(
+      dto.email,
+    );
+    const foundedUserByUsername = await this.usersService.findUserByUsername(
+      dto.username,
+    );
+    if (foundedUserByEmail || foundedUserByUsername) {
+      throw new BadRequestException(USER_EXIST_ERROR);
+    }
 
     return await this.usersService.create(dto);
   }

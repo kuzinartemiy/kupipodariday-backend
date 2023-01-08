@@ -13,11 +13,11 @@ import { CreateOfferDto } from './dto/create-offer.dto';
 import { OfferEntity } from './entities/offer.entity';
 import { OffersService } from './offers.service';
 
+@UseGuards(JwtAuthGuard)
 @Controller('offers')
 export class OffersController {
   constructor(private readonly offersService: OffersService) {}
 
-  @UseGuards(JwtAuthGuard)
   @Post()
   async createOffer(
     @Body() dto: CreateOfferDto,
@@ -26,13 +26,11 @@ export class OffersController {
     return await this.offersService.create(dto, user.id);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get()
   async findOffers(): Promise<OfferEntity[]> {
     return await this.offersService.findAll();
   }
 
-  @UseGuards(JwtAuthGuard)
   @Get(':id')
   async findOffersById(@Param('id') id: number): Promise<OfferEntity> {
     return await this.offersService.findOfferById(id);

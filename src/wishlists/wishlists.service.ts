@@ -4,10 +4,11 @@ import {
   NotFoundException,
 } from '@nestjs/common/exceptions';
 import { InjectRepository } from '@nestjs/typeorm';
+import { UserPublicProfileResponseDto } from 'src/users/dto/user-public-profile.dto';
 import { USER_NOT_FOUND_ERROR } from 'src/users/users.constants';
 import { UsersService } from 'src/users/users.service';
 import { WishesService } from 'src/wishes/wishes.service';
-import { DeleteResult, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { CreateWishlistDto } from './dto/create-wishlist.dto';
 import { UpdateWishlistDto } from './dto/update-wishlist.dto';
 import { WishlistEntity } from './entities/wishlist.entity';
@@ -25,13 +26,9 @@ export class WishlistsService {
     private readonly wishesService: WishesService,
   ) {}
 
-  async create(
-    dto: CreateWishlistDto,
-    userId: number,
-  ): Promise<WishlistEntity> {
+  async create(dto: CreateWishlistDto, userId: number) {
     const user = await this.usersService.findUserById(userId);
     if (!user) throw new NotFoundException(USER_NOT_FOUND_ERROR);
-    delete user.password;
 
     const wishes = await this.wishesService.findWishesByIds(dto.itemsId);
 
@@ -40,14 +37,26 @@ export class WishlistsService {
       owner: user,
       items: wishes,
     });
+    const savedWishlist = await this.wishlistsRepository.save(newWishlist);
 
-    return this.wishlistsRepository.save(newWishlist);
+    return {
+      ...savedWishlist,
+      owner: UserPublicProfileResponseDto.getPublicProfile(user),
+      items: wishes,
+    };
   }
 
   async findAllWishlists(): Promise<WishlistEntity[]> {
-    return this.wishlistsRepository.find({
+    const wishlists = await this.wishlistsRepository.find({
       relations: ['owner', 'items'],
     });
+
+    for (const wishlist of wishlists) {
+      delete wishlist.owner.password;
+      delete wishlist.owner.email;
+    }
+
+    return wishlists;
   }
 
   async findWishlistById(id: number): Promise<WishlistEntity> {
@@ -56,6 +65,9 @@ export class WishlistsService {
       relations: ['owner', 'items'],
     });
     if (!wishlist) throw new NotFoundException(WISHLIST_NOT_FOUND_ERROR);
+
+    delete wishlist.owner.password;
+    delete wishlist.owner.email;
 
     return wishlist;
   }
@@ -89,7 +101,7 @@ export class WishlistsService {
     return this.wishlistsRepository.save(updatingWishlist);
   }
 
-  async deleteWishlist(id: number, userId: number): Promise<DeleteResult> {
+  async deleteWishlist(id: number, userId: number) {
     const wishlist = await this.findWishlistById(id);
     if (!wishlist) throw new NotFoundException(WISHLIST_NOT_FOUND_ERROR);
 
@@ -97,6 +109,13 @@ export class WishlistsService {
       throw new BadRequestException(WRONG_OWNER_ERROR);
     }
 
-    return this.wishlistsRepository.delete(id);
+    await this.wishlistsRepository.delete(id);
+
+    const deletedWishlist = {
+      ...wishlist,
+      owner: UserPublicProfileResponseDto.getPublicProfile(wishlist.owner),
+    };
+
+    return deletedWishlist;
   }
 }

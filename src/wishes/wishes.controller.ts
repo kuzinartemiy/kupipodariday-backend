@@ -11,7 +11,7 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/guards/jwt.guard';
 import { UserEntity } from 'src/users/entities/user.entity';
-import { DeleteResult, UpdateResult } from 'typeorm';
+import { UpdateResult } from 'typeorm';
 import { CreateWishDto } from './dto/create-wish.dto';
 import { UpdateWishDto } from './dto/update-wish.dto';
 import { WishEntity } from './entities/wish.entity';
@@ -33,7 +33,7 @@ export class WishesController {
     @Req() req,
     @Body() dto: CreateWishDto,
   ): Promise<WishEntity> {
-    return await this.wishesService.createWish(dto, req.user);
+    return await this.wishesService.createWish(dto, req.user.id);
   }
 
   @Get('last')
@@ -46,6 +46,7 @@ export class WishesController {
     return await this.wishesService.findTopWishes();
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get(':id')
   async getWishById(@Param('id') id: number): Promise<WishEntity> {
     return await this.wishesService.findWishById(id);
@@ -66,7 +67,7 @@ export class WishesController {
   async deleteWish(
     @Req() { user },
     @Param('id') id: number,
-  ): Promise<DeleteResult> {
+  ): Promise<WishEntity> {
     return await this.wishesService.deleteWishById(id, user.id);
   }
 

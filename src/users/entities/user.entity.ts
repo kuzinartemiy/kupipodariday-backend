@@ -20,7 +20,7 @@ export class UserEntity {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ length: 30 })
+  @Column({ length: 30, unique: true })
   @IsString()
   @Length(2, 30)
   @IsNotEmpty()
