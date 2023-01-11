@@ -5,9 +5,9 @@ import { UserEntity } from 'src/users/entities/user.entity';
 import { WishEntity } from 'src/wishes/entities/wish.entity';
 import { WishlistEntity } from 'src/wishlists/entities/wishlist.entity';
 
-export const getPostgresConfig = async (
+export const getPostgresConfig = (
   configService: ConfigService,
-): Promise<TypeOrmModuleOptions> => {
+): TypeOrmModuleOptions => {
   return {
     type: 'postgres',
     host: configService.get('POSTGRES_HOST'),

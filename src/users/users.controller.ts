@@ -26,12 +26,12 @@ export class UsersController {
 
   @Get()
   async findAll(): Promise<UserEntity[]> {
-    const fondedUsers = (await this.usersService.findAll()).map((user) => {
+    const foundedUsers = (await this.usersService.findAll()).map((user) => {
       delete user.password;
       return user;
     });
 
-    return fondedUsers;
+    return foundedUsers;
   }
 
   @Get('me')

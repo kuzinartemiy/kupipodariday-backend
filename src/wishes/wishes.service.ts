@@ -38,7 +38,7 @@ export class WishesService {
     return savedWish;
   }
 
-  async findAll(): Promise<WishEntity[]> {
+  findAll(): Promise<WishEntity[]> {
     return this.wishesRepository.find();
   }
 
@@ -144,11 +144,11 @@ export class WishesService {
     return await this.createWish(wishCopy, user.id);
   }
 
-  async updateWishRaised(id: number, raised: number): Promise<UpdateResult> {
+  updateWishRaised(id: number, raised: number): Promise<UpdateResult> {
     return this.wishesRepository.update(id, { raised });
   }
 
-  async findWishesByIds(ids: number[]): Promise<WishEntity[]> {
+  findWishesByIds(ids: number[]): Promise<WishEntity[]> {
     return this.wishesRepository.find({
       where: { id: In(ids) },
     });

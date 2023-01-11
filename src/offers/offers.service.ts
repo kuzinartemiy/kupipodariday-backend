@@ -54,7 +54,7 @@ export class OffersService {
     return this.offersRepository.save(createdOffer);
   }
 
-  async findAll(): Promise<OfferEntity[]> {
+  findAll(): Promise<OfferEntity[]> {
     return this.offersRepository.find({ relations: ['item', 'user'] });
   }
 

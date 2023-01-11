@@ -32,27 +32,27 @@ export class UsersService {
     return this.usersRepository.find();
   }
 
-  async findUser(query: string): Promise<UserEntity> {
+  findUser(query: string): Promise<UserEntity> {
     return this.usersRepository.findOne({
       where: [{ username: query }, { email: query }],
     });
   }
 
-  async findMany(query: string): Promise<UserEntity[]> {
+  findMany(query: string): Promise<UserEntity[]> {
     return this.usersRepository.find({
       where: [{ username: query }, { email: query }],
     });
   }
 
-  async findUserById(id: number): Promise<UserEntity> {
+  findUserById(id: number): Promise<UserEntity> {
     return this.usersRepository.findOneBy({ id });
   }
 
-  async findUserByEmail(email: string): Promise<UserEntity> {
+  findUserByEmail(email: string): Promise<UserEntity> {
     return this.usersRepository.findOneBy({ email });
   }
 
-  async findUserByUsername(username: string): Promise<UserEntity> {
+  findUserByUsername(username: string): Promise<UserEntity> {
     return this.usersRepository.findOneBy({ username });
   }
 
@@ -80,7 +80,7 @@ export class UsersService {
     return await this.findUserById(id);
   }
 
-  async deleteById(id: number): Promise<DeleteResult> {
+  deleteById(id: number): Promise<DeleteResult> {
     return this.usersRepository.delete(id);
   }
 
